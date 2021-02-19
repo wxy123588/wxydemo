@@ -1,11 +1,13 @@
 package com.example.demo.mobile;
 
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+@Component
 public class MobileNumberUtils {
 
 	private static Map<String , MobileAddress> mobileAddressMap  = new HashMap<String ,MobileAddress>();

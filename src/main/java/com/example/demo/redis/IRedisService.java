@@ -12,5 +12,10 @@ public interface IRedisService {
     void setValue(String key, Object value);
     // 获取元素
     Object getValue(String key);
+    public boolean set(final String key, final String value);
+    public String get(final String key);
+    //设置有效天数
+    public boolean expire(final String key, long expire) ;
+    //移除数据
+    public boolean remove(final String key) ;
 }
-

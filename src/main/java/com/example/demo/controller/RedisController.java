@@ -1,5 +1,6 @@
-package com.example.demo.redis;
+package com.example.demo.controller;
 
+import com.example.demo.redis.IRedisService;
 import com.example.demo.util.RestResult;
 import com.example.demo.util.RestResultType;
 import org.slf4j.Logger;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/redis")
@@ -41,45 +41,7 @@ public class RedisController{
 		}
 		return new ResponseEntity<>(new RestResult(RestResultType.OK), HttpStatus.OK);
 	}
-	/**
-	 * 存入redis
-	 * @param request
-	 * @return
-	 */
-	@RequestMapping(value = "/saveredisMap")
-	public ResponseEntity<RestResult> saveredisMap(HttpServletRequest request , @Valid String key, @Valid Map<String, Object> value) {
-		logger.info("saveredisMap方法 key:"+key+"value:"+value);
-		try {
-			redisService.setValue(key,value);
-			logger.info("saveredisMap方法 key:"+key+"value:"+value);
-		} catch (Exception e) {
-			e.printStackTrace();
-			logger.info("saveredisMap方法异常 key:"+key+"value:"+value);
-		} finally {
-			logger.info("saveredisMap方法finally key:"+key+"value:"+value);
-		}
 
-		return new ResponseEntity<>(new RestResult(RestResultType.OK), HttpStatus.OK);
-	}
-	/**
-	 * 存入redis
-	 * @param request
-	 * @return
-	 */
-	@RequestMapping(value = "/saveredisObject")
-	public ResponseEntity saveredisObject(HttpServletRequest request , @Valid String key, @Valid Object value) {
-		logger.info("saveredisObject方法 key:"+key+"value:"+value);
-		try {
-			redisService.setValue(key,value);
-			logger.info("saveredisObject方法 key:"+key+"value:"+value);
-		} catch (Exception e) {
-			e.printStackTrace();
-			logger.info("saveredisObject方法异常 key:"+key+"value:"+value);
-		} finally {
-			logger.info("saveredisObject方法finally key:"+key+"value:"+value);
-		}
-		return new ResponseEntity<>(new RestResult(RestResultType.OK), HttpStatus.OK);
-	}
 	/**
 	 * 存入redis
 	 * @param request
