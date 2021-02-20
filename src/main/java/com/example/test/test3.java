@@ -47,6 +47,7 @@ public class test3 {
 
         // 将存有user的map存入redis  key为user
         jedis.hmset("user", map);
+        System.out.println("***********************"+jedis.hexists("user",id4));
         // 测试取出id3的user的信息
         String u = jedis.hget("user", id3);
         // 取出key为user的所有的用户的map，即刚刚存入的map
