@@ -5,6 +5,7 @@ import com.example.demo.entity.*;
 import com.example.demo.mobile.MobileAddress;
 import com.example.demo.mobile.MobileNumberUtils;
 import com.example.demo.repository.*;
+import com.example.demo.util.JsonUtil;
 import com.example.demo.util.RedisContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import redis.clients.jedis.Jedis;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("/getOutNumberApi")
 public class GetOutNumberApi {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
+int numcount=0;
     @Autowired
     private StatusEventRepository statusEventRepository;
     @Autowired
@@ -44,15 +42,20 @@ public class GetOutNumberApi {
     //传递话单id
     @RequestMapping(value = "/getoutnumber")
     public  String getoutnumber(String eventid){
+        logger.info("第a"+(numcount)+"次starttime:"+ System.currentTimeMillis());
         StatusEvent statusEvent=getstatudevent(eventid);//对应话单
+        logger.info("第b"+(numcount)+"次starttime:"+ System.currentTimeMillis());
         if(statusEvent!=null&&statusEvent.getUserid()!=null){
             User user=getUserbyid(statusEvent.getUserid());//查询当前坐席
+            logger.info("第c"+(numcount)+"次starttime:"+ System.currentTimeMillis());
             if(user!=null){
                 if(user.getNumgroupenable()==false){ //固定线路
                    NumberPool num= getnumberpoolbyid(user.getNumberpoolid());//单线路直接查询线路号码
+                    logger.info("第d"+(numcount)+"次starttime:"+ System.currentTimeMillis());
                     return num.getNumber();
                 }else{
                     NumberPoolGroup numberPoolGroup=getnumberpoolgroupbyid(user.getNumbergroupid());//查询当前坐席所在的线路组
+                    logger.info("第e"+(numcount)+"次starttime:"+ System.currentTimeMillis());
                     List<NumberPool>  numlist=null;
                     if(numberPoolGroup!=null&&numberPoolGroup.getStrategy()!=null){
                         String strategy=numberPoolGroup.getStrategy();//策略
@@ -87,28 +90,45 @@ public class GetOutNumberApi {
 
     //获取话单
     public  StatusEvent getstatudevent(String id){
+        logger.info("StatusEvent1:"+ System.currentTimeMillis());
         StatusEvent statusEvent =null;
         if(jedis.hexists(RedisContext.statusevent_redis,id)){
+            logger.info("StatusEvent2:"+ System.currentTimeMillis());
             String event =jedis.hget(RedisContext.statusevent_redis,id);
+            logger.info("StatusEvent3:"+ System.currentTimeMillis());
             statusEvent= json.parseObject(event, StatusEvent.class);
+            logger.info("StatusEvent4:"+ System.currentTimeMillis());
         }else{
             statusEvent=statusEventRepository.findById(id);
+            logger.info("StatusEvent5:"+ System.currentTimeMillis());
             statuteventmap.put(id,json.toJSONString(statusEvent));//数据库查询放入缓存
+            logger.info("StatusEvent6:"+ System.currentTimeMillis());
             jedis.hmset(RedisContext.statusevent_redis,statuteventmap);
+            logger.info("StatusEvent7:"+ System.currentTimeMillis());
         }
+        logger.info("StatusEvent8:"+ System.currentTimeMillis());
+        jedis.close();
         return statusEvent;
     }
     //获取用户
     public  User getUserbyid(String id){
         User user =null;
+        logger.info("user1:"+ System.currentTimeMillis());
         if(jedis.hexists(RedisContext.user_redis,id)){
+            logger.info("user2:"+ System.currentTimeMillis());
             String temp =jedis.hget(RedisContext.user_redis,id);
+            logger.info("user3:"+ System.currentTimeMillis());
             user= json.parseObject(temp, User.class);
+            logger.info("user4:"+ System.currentTimeMillis());
         }else{
+            logger.info("user5:"+ System.currentTimeMillis());
             user=userRepository.findById(id);//查询当前坐席
             usermap.put(id,json.toJSONString(user));//数据库查询放入缓存
             jedis.hmset(RedisContext.user_redis,usermap);
         }
+        logger.info("user6:"+ System.currentTimeMillis());
+        jedis.close();
+        logger.info("user7:"+ System.currentTimeMillis());
         return user;
     }
     //获取线路号码
@@ -122,6 +142,7 @@ public class GetOutNumberApi {
             numpoolmap.put(id,json.toJSONString(numberpool));//数据库查询放入缓存
             jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
         }
+        jedis.close();
         return numberpool;
     }
 
@@ -136,6 +157,7 @@ public class GetOutNumberApi {
             numpoolgroupmap.put(id,json.toJSONString(numberpoolgroup));//数据库查询放入缓存
             jedis.hmset(RedisContext.numberpoolgroup_redis,numpoolgroupmap);
         }
+        jedis.close();
         return numberpoolgroup;
     }
 
@@ -161,10 +183,13 @@ public class GetOutNumberApi {
             for (int j=1;j<templist.size();j++) {
                 NumberPool numpool =  json.parseObject(templist.get(j), NumberPool.class);
                 if(numpool.getCount()<temp){
+                    temp=numpool.getCount();
                     numberpool=numpool;
                 }
             }
-
+            numberpool.setCount(++temp);
+            numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
+            jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
         }else{
             List<NumberPool> list=numberPoolRepository.findBygroupid(groupid);
             if(list.size()==0){
@@ -176,6 +201,8 @@ public class GetOutNumberApi {
             jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
             numberpool=getnumPoolbycount(list);
         }
+        jedis.close();
+        logger.info("第f"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
         return numberpool;
     }
 
@@ -192,6 +219,9 @@ public class GetOutNumberApi {
         }
         numberpool.setCount(temp++);
         numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
+        jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
+        jedis.close();
         return numberpool;
     }
+
 }

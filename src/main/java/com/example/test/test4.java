@@ -1,22 +1,29 @@
-package com.example.demo.init;
+package com.example.test;
 
 import com.alibaba.fastjson.JSONObject;
+import com.example.demo.DemoApplication;
+
 import com.example.demo.entity.*;
+import com.example.demo.entity.User;
 import com.example.demo.repository.*;
 import com.example.demo.util.RedisContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 import redis.clients.jedis.Jedis;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-@Component
-public class DemoInit {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = DemoApplication.class)
+public class test4 {
+    private JSONObject json = new JSONObject();
 
     @Autowired
     private StatusEventRepository statusEventRepository;
@@ -29,7 +36,6 @@ public class DemoInit {
     @Autowired
     private NumberPoolGroupRelaRepository numberPoolGroupRelaRepository;
 
-    private JSONObject json = new JSONObject();
     private Map<String, String> numpoolmap = new HashMap<String, String>();
     private Map<String, String> numpoolgroupmap = new HashMap<String, String>();
     private Map<String, String> usermap = new HashMap<String, String>();
@@ -39,7 +45,7 @@ public class DemoInit {
 
     public  void init(){
         //存user
-        List<User> userlist=userRepository.findAll();
+        List<com.example.demo.entity.User> userlist=userRepository.findAll();
         if(userlist.size()>0){
             for(User user:userlist){
                 usermap.put(user.getId(),json.toJSONString(user));
@@ -79,4 +85,18 @@ public class DemoInit {
         }
         jedis.close();
     }
+
+    @Test
+    public void testJedis(){
+        // 链接redis
+        Jedis jedis = new Jedis("39.107.43.71", 6379);
+        jedis.auth("xyzt2019");
+        jedis.del(RedisContext.user_redis);
+        jedis.del(RedisContext.statusevent_redis);
+        jedis.del(RedisContext.numberpool_redis);
+        jedis.del(RedisContext.numberpoolgroup_redis);
+        jedis.del("2c90810d77704983017770becb78015c");
+        init();
+    }
 }
+
