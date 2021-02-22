@@ -5,6 +5,7 @@ import com.example.demo.DemoApplication;
 
 import com.example.demo.entity.*;
 import com.example.demo.entity.User;
+import com.example.demo.redis.RedisUtil;
 import com.example.demo.repository.*;
 import com.example.demo.util.RedisContext;
 import org.junit.Test;
@@ -39,7 +40,7 @@ public class test4 {
     private Map<String, String> numpoolgroupmap = new HashMap<String, String>();
     private Map<String, String> usermap = new HashMap<String, String>();
     private Map<String, String> statuteventmap = new HashMap<String, String>();
-    private Jedis jedis= RedisContext.getjedis();
+    private Jedis jedis= RedisUtil.getJedis();
 
 
     @Test

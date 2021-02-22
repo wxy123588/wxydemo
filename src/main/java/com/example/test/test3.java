@@ -3,6 +3,7 @@ package com.example.test;
 import com.alibaba.fastjson.JSONObject;
 import com.example.demo.DemoApplication;
 
+import com.example.demo.redis.RedisUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,9 +24,7 @@ public class test3 {
     @Test
     public void testJedis(){
         // 链接redis
-        Jedis jedis = new Jedis("39.107.43.71", 6379);
-        jedis.auth("xyzt2019");
-
+        Jedis jedis =RedisUtil.getJedis();
         // 存放user的map，user的id为key user的json字符串为value
         Map<String, String> map = new HashMap<String, String>();
 

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.example.demo.entity.*;
 import com.example.demo.mobile.MobileAddress;
 import com.example.demo.mobile.MobileNumberUtils;
+import com.example.demo.redis.RedisUtil;
 import com.example.demo.repository.*;
 import com.example.demo.util.RedisContext;
 import org.slf4j.Logger;
@@ -35,7 +36,7 @@ public class DemoInit {
     private Map<String, String> numpoolgroupmap = new HashMap<String, String>();
     private Map<String, String> usermap = new HashMap<String, String>();
     private Map<String, String> statuteventmap = new HashMap<String, String>();
-    private Jedis jedis=RedisContext.getjedis();
+    private Jedis jedis= RedisUtil.getJedis();
 
     public void init () {
         //存user

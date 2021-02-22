@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.example.demo.entity.*;
 import com.example.demo.mobile.MobileAddress;
 import com.example.demo.mobile.MobileNumberUtils;
+import com.example.demo.redis.RedisUtil;
 import com.example.demo.repository.*;
 import com.example.demo.util.RedisContext;
 import org.slf4j.Logger;
@@ -37,7 +38,7 @@ public class GetOutNumberApi {
     private Map<String, String> numpoolgroupmap = new HashMap<String, String>();
     private Map<String, String> usermap = new HashMap<String, String>();
     private Map<String, String> statuteventmap = new HashMap<String, String>();
-    private Jedis jedis=RedisContext.getjedis();
+    private Jedis jedis=RedisUtil.getJedis();
     private int numcount=1;
 
     //传递话单id
@@ -96,7 +97,7 @@ public class GetOutNumberApi {
             logger.info("StatusEvent7:"+ System.currentTimeMillis());
         }
         logger.info("StatusEvent8:"+ System.currentTimeMillis());
-        jedis.close();
+       // jedis.close();
         return statusEvent;
     }
     //获取用户
@@ -116,7 +117,7 @@ public class GetOutNumberApi {
             jedis.hmset(RedisContext.user_redis,usermap);
         }
         logger.info("user6:"+ System.currentTimeMillis());
-        jedis.close();
+       // jedis.close();
         logger.info("user7:"+ System.currentTimeMillis());
         return user;
     }
@@ -131,7 +132,7 @@ public class GetOutNumberApi {
             numpoolmap.put(id,json.toJSONString(numberpool));//数据库查询放入缓存
             jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
         }
-        jedis.close();
+       // jedis.close();
         return numberpool;
     }
 
@@ -146,14 +147,17 @@ public class GetOutNumberApi {
             numpoolgroupmap.put(id,json.toJSONString(numberpoolgroup));//数据库查询放入缓存
             jedis.hmset(RedisContext.numberpoolgroup_redis,numpoolgroupmap);
         }
-        jedis.close();
+        //jedis.close();
         return numberpoolgroup;
     }
 
     //获取最终线路号码
     public  NumberPool getnumberpoolbygroupid(String groupid){
+        logger.info("f1starttime:"+ System.currentTimeMillis());
         NumberPool numberpool =null;
         Set<String> poolStr = jedis.smembers("ccpaas"+groupid);//获取所有线路id字符串
+        logger.info("f2starttime:"+ System.currentTimeMillis());
+
         //缓存没有则数据库查询，并放入缓存
         if(poolStr.isEmpty()){
             List<NumberPoolGroupRela> list=numberPoolGroupRelaRepository.findByNumbergroupid(groupid);
@@ -167,8 +171,12 @@ public class GetOutNumberApi {
         }
         //通过线路id字符串获取线路，没有则数据库查询，并放入缓存
         List<String>  templist = jedis.hmget(RedisContext.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
+        logger.info("f3starttime:"+ System.currentTimeMillis());
+
         if(templist.size()>0){
             numberpool =json.parseObject(templist.get(0), NumberPool.class);
+            logger.info("f4starttime:"+ System.currentTimeMillis());
+
             int temp=numberpool.getCount();//获取线路count最小的线路
             for (int j=1;j<templist.size();j++) {
                 NumberPool numpool =  json.parseObject(templist.get(j), NumberPool.class);
@@ -177,9 +185,13 @@ public class GetOutNumberApi {
                     numberpool=numpool;
                 }
             }
+            logger.info("f5starttime:"+ System.currentTimeMillis());
+
             numberpool.setCount(++temp);
             numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
             jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
+            logger.info("f6starttime:"+ System.currentTimeMillis());
+
         }else{
             List<NumberPool> list=numberPoolRepository.findBygroupid(groupid);
             if(list.size()==0){
@@ -191,7 +203,7 @@ public class GetOutNumberApi {
             jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
             numberpool=getnumPoolbycount(list);
         }
-        jedis.close();
+       // jedis.close();
         logger.info("fstarttime:"+ System.currentTimeMillis());
         return numberpool;
     }
@@ -210,7 +222,7 @@ public class GetOutNumberApi {
         numberpool.setCount(temp++);
         numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
         jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
-        jedis.close();
+       // jedis.close();
         return numberpool;
     }
 

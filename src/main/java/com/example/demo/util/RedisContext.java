@@ -9,9 +9,9 @@ public class RedisContext {
     public static  String numberpool_redis="numberpool_redis";//线路存入redis标识 map.put(id,json.toJSONString(numberpool))
     //public static  String numberpool_groupid_redis="numberpool_groupid_redis";//线路组和线路关联  jedis.sadd(groupid, poolid);
     public static  String numberpoolgroup_redis="numberpoolgroup_redis";//线路组存入redis标识 map.put(id,json.toJSONString(numberpoolgroup))
-    public static Jedis getjedis(){
-        Jedis jedis = new Jedis("39.107.43.71", 6379);
-        jedis.auth("xyzt2019");
-        return jedis;
-    }
+//    public static Jedis getjedis(){
+//        Jedis jedis = new Jedis("39.107.43.71", 6379);
+//        jedis.auth("xyzt2019");
+//        return jedis;
+//    }
 }
