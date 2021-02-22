@@ -67,7 +67,7 @@ public class GetOutNumberApi {
                             NumberPool nub= getnumberpoolbygroupidandAtt(user.getNumbergroupid(),statusEvent.getCalled());
                             return nub.getNumber();
                         }else{//接通后固定外显
-                            getnumberpoolbyhistory(statusEvent);
+                            getnumberpoolbyhistory(statusEvent.getCalled(),numberPoolGroup.getId());
 
                         }
                     }
@@ -153,14 +153,15 @@ public class GetOutNumberApi {
     //获取最终线路号码
     public  NumberPool getnumberpoolbygroupid(String groupid){
         NumberPool numberpool =null;
-        Set<String> poolStr = jedis.smembers(groupid);//获取所有线路id字符串
-        if(poolStr.isEmpty()){//缓存没有则数据库查询，并放入缓存
+        Set<String> poolStr = jedis.smembers("ccpaas"+groupid);//获取所有线路id字符串
+        //缓存没有则数据库查询，并放入缓存
+        if(poolStr.isEmpty()){
             List<NumberPoolGroupRela> list=numberPoolGroupRelaRepository.findByNumbergroupid(groupid);
             if(list.size()==0){
                 return null;
             }
             for(NumberPoolGroupRela rela:list){
-                jedis.sadd(groupid, rela.getNumberpoolid());//放入缓存
+                jedis.sadd("ccpaas"+groupid, rela.getNumberpoolid());//放入缓存
                 poolStr.add(rela.getNumberpoolid());//拼接所有线路id字符串
             }
         }
@@ -217,7 +218,8 @@ public class GetOutNumberApi {
     public  NumberPool getnumberpoolbygroupidandAtt(String groupid,String called){
         NumberPool numPool=null;
         MobileAddress mobileAddress= MobileNumberUtils.getAddress(called);
-        String temp =jedis.hget(RedisContext.numberpoolgroup_redis,groupid);
+        String temp =jedis.hget(RedisContext.numberpool_redis,groupid);
+        Set<String> poolStr = jedis.smembers("ccpaas"+called);
         List<NumberPool> numberpooplist=json.parseArray(temp,NumberPool.class);
         List<NumberPool> prolist=  numberpooplist.stream().filter(numberpoop -> numberpoop.getProvince().equals(mobileAddress.getProvince())).collect(Collectors.toList());
         if(prolist.size()>0){
@@ -234,8 +236,27 @@ public class GetOutNumberApi {
     }
 
     //接通后固定外显
-    public  NumberPool getnumberpoolbyhistory(StatusEvent statusEvent){
-
+    public  String getnumberpoolbyhistory(String called,String numbergroupid) {
+        //通过被叫查询所有有过记录的主叫号码
+        Set<String> discallStr = jedis.smembers("ccpaas"+called);
+        if (discallStr.isEmpty()) {
+            //走轮询
+            NumberPool nub=getnumberpoolbygroupid(numbergroupid);
+            return nub.getNumber();
+        }else{
+            //线路组下可用线路id
+            Set<String> poolStr = jedis.smembers("ccpaas"+numbergroupid);
+            //线路组下可用线路list
+            List<String>  numpoollist = jedis.hmget(RedisContext.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
+            for(String str:discallStr){//历史线路组 主叫
+                for(int i=0;i<numpoollist.size();i++){//遍历可用线路组
+                    NumberPool numberpool =json.parseObject(numpoollist.get(i), NumberPool.class);
+                    if(str.equals(numberpool.getNumber())){
+                        return str;
+                    }
+                }
+            }
+        }
         return null;
     }
 

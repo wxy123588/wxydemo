@@ -17,7 +17,6 @@ import redis.clients.jedis.Jedis;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 
 @RunWith(SpringRunner.class)
@@ -43,49 +42,6 @@ public class test4 {
     private Jedis jedis= RedisContext.getjedis();
 
 
-    public  void init(){
-        //存user
-        List<com.example.demo.entity.User> userlist=userRepository.findAll();
-        if(userlist.size()>0){
-            for(User user:userlist){
-                usermap.put(user.getId(),json.toJSONString(user));
-            }
-            jedis.hmset(RedisContext.user_redis,usermap);
-        }
-        //存线路
-        List<NumberPool> numberpoollist=numberPoolRepository.findAll();
-        if(numberpoollist.size()>0){
-            for(NumberPool numberPool:numberpoollist){
-                numpoolmap.put(numberPool.getId(),json.toJSONString(numberPool));
-            }
-            jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
-        }
-        //存线路组
-        List<NumberPoolGroup> numberpoolgrouplist=numberPoolGroupRepository.findAll();
-        if(numberpoolgrouplist.size()>0){
-            for(NumberPoolGroup numberPoolGroup:numberpoolgrouplist){
-                numpoolgroupmap.put(numberPoolGroup.getId(),json.toJSONString(numberPoolGroup));
-            }
-            jedis.hmset(RedisContext.numberpoolgroup_redis,numpoolgroupmap);
-        }
-        //存线路组和线路对照
-        List<NumberPoolGroupRela> numberpoolgrouprelalist=numberPoolGroupRelaRepository.findAll();
-        if(numberpoolgrouprelalist.size()>0){
-            for(NumberPoolGroupRela numberPoolGroupRela:numberpoolgrouprelalist){
-                jedis.sadd(numberPoolGroupRela.getNumbergroupid(), numberPoolGroupRela.getNumberpoolid());//放入缓存
-            }
-        }
-        //存通话记录
-        List<StatusEvent> statusEventlist=statusEventRepository.findbycreatetime();
-        if(statusEventlist.size()>0){
-            for(StatusEvent statusEvent:statusEventlist){
-                statuteventmap.put(statusEvent.getId(),json.toJSONString(statusEvent));
-            }
-            jedis.hmset(RedisContext.statusevent_redis,statuteventmap);
-        }
-        jedis.close();
-    }
-
     @Test
     public void testJedis(){
         // 链接redis
@@ -95,8 +51,60 @@ public class test4 {
         jedis.del(RedisContext.statusevent_redis);
         jedis.del(RedisContext.numberpool_redis);
         jedis.del(RedisContext.numberpoolgroup_redis);
-        jedis.del("2c90810d77704983017770becb78015c");
+//        List<NumberPoolGroupRela> list=numberPoolGroupRelaRepository.findAll();
+//        for(NumberPoolGroupRela numberPoolGroupRela:list){
+//            jedis.del("ccpaas"+numberPoolGroupRela.getNumbergroupid());
+//        }
+//        List<StatusEvent> stlist=statusEventRepository.findbycreatetime();
+//        for(StatusEvent st:stlist){
+//            jedis.del("ccpaas"+st.getCalled());
+//        }
         init();
+    }
+
+    public void init () {
+        //存user
+        List<com.example.demo.entity.User> userlist = userRepository.findAll();
+        if (userlist.size() > 0) {
+            for (User user : userlist) {
+                usermap.put(user.getId(), json.toJSONString(user));
+            }
+            jedis.hmset(RedisContext.user_redis, usermap);
+        }
+        //存线路
+        List<NumberPool> numberpoollist = numberPoolRepository.findAll();
+        if (numberpoollist.size() > 0) {
+            for (NumberPool numberPool : numberpoollist) {
+                numpoolmap.put(numberPool.getId(), json.toJSONString(numberPool));
+            }
+            jedis.hmset(RedisContext.numberpool_redis, numpoolmap);
+        }
+        //存线路组
+        List<NumberPoolGroup> numberpoolgrouplist = numberPoolGroupRepository.findAll();
+        if (numberpoolgrouplist.size() > 0) {
+            for (NumberPoolGroup numberPoolGroup : numberpoolgrouplist) {
+                numpoolgroupmap.put(numberPoolGroup.getId(), json.toJSONString(numberPoolGroup));
+            }
+            jedis.hmset(RedisContext.numberpoolgroup_redis, numpoolgroupmap);
+        }
+        //存线路组和线路对照
+        List<NumberPoolGroupRela> numberpoolgrouprelalist = numberPoolGroupRelaRepository.findAll();
+        if (numberpoolgrouprelalist.size() > 0) {
+            for (NumberPoolGroupRela numberPoolGroupRela : numberpoolgrouprelalist) {
+                jedis.sadd("ccpaas"+numberPoolGroupRela.getNumbergroupid(), numberPoolGroupRela.getNumberpoolid());//放入缓存
+            }
+        }
+        //存通话记录
+        List<StatusEvent> statusEventlist = statusEventRepository.findbycreatetime();
+        if (statusEventlist.size() > 0) {
+            for (StatusEvent statusEvent : statusEventlist) {
+                statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
+                jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());//已接通固定外显（被叫、外显）
+                jedis.expire("ccpaas" + statusEvent.getCalled(),600);
+            }
+            jedis.hmset(RedisContext.statusevent_redis, statuteventmap);
+        }
+        jedis.close();
     }
 }
 
