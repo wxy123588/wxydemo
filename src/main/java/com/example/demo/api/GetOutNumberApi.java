@@ -5,7 +5,6 @@ import com.example.demo.entity.*;
 import com.example.demo.mobile.MobileAddress;
 import com.example.demo.mobile.MobileNumberUtils;
 import com.example.demo.repository.*;
-import com.example.demo.util.JsonUtil;
 import com.example.demo.util.RedisContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 import redis.clients.jedis.Jedis;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/getOutNumberApi")
 public class GetOutNumberApi {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-int numcount=0;
+
     @Autowired
     private StatusEventRepository statusEventRepository;
     @Autowired
@@ -32,54 +32,43 @@ int numcount=0;
     @Autowired
     private NumberPoolGroupRelaRepository numberPoolGroupRelaRepository;
 
-    private JSONObject json = new JSONObject();
+    private static JSONObject json = new JSONObject();
     private Map<String, String> numpoolmap = new HashMap<String, String>();
     private Map<String, String> numpoolgroupmap = new HashMap<String, String>();
     private Map<String, String> usermap = new HashMap<String, String>();
     private Map<String, String> statuteventmap = new HashMap<String, String>();
     private Jedis jedis=RedisContext.getjedis();
+    private int numcount=1;
 
     //传递话单id
     @RequestMapping(value = "/getoutnumber")
     public  String getoutnumber(String eventid){
-        logger.info("第a"+(numcount)+"次starttime:"+ System.currentTimeMillis());
+        logger.info("第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
         StatusEvent statusEvent=getstatudevent(eventid);//对应话单
-        logger.info("第b"+(numcount)+"次starttime:"+ System.currentTimeMillis());
+        logger.info("bstarttime:"+ System.currentTimeMillis());
         if(statusEvent!=null&&statusEvent.getUserid()!=null){
             User user=getUserbyid(statusEvent.getUserid());//查询当前坐席
-            logger.info("第c"+(numcount)+"次starttime:"+ System.currentTimeMillis());
+            logger.info("cstarttime:"+ System.currentTimeMillis());
             if(user!=null){
                 if(user.getNumgroupenable()==false){ //固定线路
                    NumberPool num= getnumberpoolbyid(user.getNumberpoolid());//单线路直接查询线路号码
-                    logger.info("第d"+(numcount)+"次starttime:"+ System.currentTimeMillis());
+                    logger.info("dstarttime:"+ System.currentTimeMillis());
                     return num.getNumber();
                 }else{
                     NumberPoolGroup numberPoolGroup=getnumberpoolgroupbyid(user.getNumbergroupid());//查询当前坐席所在的线路组
-                    logger.info("第e"+(numcount)+"次starttime:"+ System.currentTimeMillis());
+                    logger.info("estarttime:"+ System.currentTimeMillis());
                     List<NumberPool>  numlist=null;
                     if(numberPoolGroup!=null&&numberPoolGroup.getStrategy()!=null){
                         String strategy=numberPoolGroup.getStrategy();//策略
                         if(strategy.equals("poll")){//轮询
-                            return getnumberpoolbygroupid(user.getNumbergroupid()).getNumber();//查询线路组里面的线路
+                            NumberPool nub=getnumberpoolbygroupid(user.getNumbergroupid());
+                            return nub.getNumber();//查询线路组里面的线路
                         }else if(strategy.equals("attribution")){//归属地
-                            String called=statusEvent.getCalled();
-                            MobileAddress mobileAddress= MobileNumberUtils.getAddress(called);
-                            //statusEvent.getUserid();
-                            numlist= numberPoolRepository.findBygroupidandprovinceAndcity(numberPoolGroup.getId(),mobileAddress.getProvince(),mobileAddress.getCity());//查询线路组里面的线路
-                            if(numlist.size()>0){
-                                //NumberPool returnnumberpool= getattributionmobilenum(numlist);
-
-                            }else{
-                                numlist= numberPoolRepository.findBygroupidandprovince(numberPoolGroup.getId(),mobileAddress.getProvince());//查询线路组里面的线路
-                                if(numlist.size()>0){
-                                    //NumberPool returnnumberpool= getattributionmobilenum(numlist);
-                                }
-                            }
+                            NumberPool nub= getnumberpoolbygroupidandAtt(user.getNumbergroupid(),statusEvent.getCalled());
+                            return nub.getNumber();
                         }else{//接通后固定外显
-                            List<StatusEvent> list=statusEventRepository.findByCalledAndAnswer(statusEvent.getCalled(),"answered");
-                            if(list.size()>0){
-                                return list.get(0).getDiscalled();
-                            }
+                            getnumberpoolbyhistory(statusEvent);
+
                         }
                     }
                 }
@@ -202,7 +191,7 @@ int numcount=0;
             numberpool=getnumPoolbycount(list);
         }
         jedis.close();
-        logger.info("第f"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
+        logger.info("fstarttime:"+ System.currentTimeMillis());
         return numberpool;
     }
 
@@ -222,6 +211,32 @@ int numcount=0;
         jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
         jedis.close();
         return numberpool;
+    }
+
+    //根据归属地匹配外显号码
+    public  NumberPool getnumberpoolbygroupidandAtt(String groupid,String called){
+        NumberPool numPool=null;
+        MobileAddress mobileAddress= MobileNumberUtils.getAddress(called);
+        String temp =jedis.hget(RedisContext.numberpoolgroup_redis,groupid);
+        List<NumberPool> numberpooplist=json.parseArray(temp,NumberPool.class);
+        List<NumberPool> prolist=  numberpooplist.stream().filter(numberpoop -> numberpoop.getProvince().equals(mobileAddress.getProvince())).collect(Collectors.toList());
+        if(prolist.size()>0){
+            List<NumberPool> citylist=  prolist.stream().filter(numberpoop -> numberpoop.getCity().equals(mobileAddress.getCity())).collect(Collectors.toList());
+            if(citylist.size()>0){
+                numPool=getnumPoolbycount(citylist);
+            }else{
+                numPool=getnumPoolbycount(prolist);
+            }
+        }else{
+            numPool=getnumPoolbycount(numberpooplist);
+        }
+        return numPool;
+    }
+
+    //接通后固定外显
+    public  NumberPool getnumberpoolbyhistory(StatusEvent statusEvent){
+
+        return null;
     }
 
 }
