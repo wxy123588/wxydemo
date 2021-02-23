@@ -39,11 +39,13 @@ public class GetOutNumberApi {
     private Map<String, String> usermap = new HashMap<String, String>();
     private Map<String, String> statuteventmap = new HashMap<String, String>();
     private Jedis jedis=RedisUtil.getJedis();
+    private Jedis jedis1=RedisContext.getjedis();
     private int numcount=1;
 
     //传递话单id
     @RequestMapping(value = "/getoutnumber")
     public  String getoutnumber(String eventid){
+        eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
         logger.info("第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
         StatusEvent statusEvent=getstatudevent(eventid);//对应话单
         logger.info("bstarttime:"+ System.currentTimeMillis());
@@ -97,7 +99,7 @@ public class GetOutNumberApi {
             logger.info("StatusEvent7:"+ System.currentTimeMillis());
         }
         logger.info("StatusEvent8:"+ System.currentTimeMillis());
-       // jedis.close();
+        jedis.close();
         return statusEvent;
     }
     //获取用户
@@ -117,7 +119,7 @@ public class GetOutNumberApi {
             jedis.hmset(RedisContext.user_redis,usermap);
         }
         logger.info("user6:"+ System.currentTimeMillis());
-       // jedis.close();
+        jedis.close();
         logger.info("user7:"+ System.currentTimeMillis());
         return user;
     }
@@ -132,7 +134,7 @@ public class GetOutNumberApi {
             numpoolmap.put(id,json.toJSONString(numberpool));//数据库查询放入缓存
             jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
         }
-       // jedis.close();
+        jedis.close();
         return numberpool;
     }
 
@@ -147,7 +149,7 @@ public class GetOutNumberApi {
             numpoolgroupmap.put(id,json.toJSONString(numberpoolgroup));//数据库查询放入缓存
             jedis.hmset(RedisContext.numberpoolgroup_redis,numpoolgroupmap);
         }
-        //jedis.close();
+        jedis.close();
         return numberpoolgroup;
     }
 
@@ -162,6 +164,7 @@ public class GetOutNumberApi {
         if(poolStr.isEmpty()){
             List<NumberPoolGroupRela> list=numberPoolGroupRelaRepository.findByNumbergroupid(groupid);
             if(list.size()==0){
+                jedis.close();
                 return null;
             }
             for(NumberPoolGroupRela rela:list){
@@ -195,6 +198,7 @@ public class GetOutNumberApi {
         }else{
             List<NumberPool> list=numberPoolRepository.findBygroupid(groupid);
             if(list.size()==0){
+                jedis.close();
                 return null;
             }
             for(NumberPool numberPool:list){
@@ -203,7 +207,7 @@ public class GetOutNumberApi {
             jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
             numberpool=getnumPoolbycount(list);
         }
-       // jedis.close();
+        jedis.close();
         logger.info("fstarttime:"+ System.currentTimeMillis());
         return numberpool;
     }
@@ -222,7 +226,7 @@ public class GetOutNumberApi {
         numberpool.setCount(temp++);
         numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
         jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
-       // jedis.close();
+        jedis.close();
         return numberpool;
     }
 
@@ -244,6 +248,7 @@ public class GetOutNumberApi {
         }else{
             numPool=getnumPoolbycount(numberpooplist);
         }
+        jedis.close();
         return numPool;
     }
 
@@ -254,6 +259,7 @@ public class GetOutNumberApi {
         if (discallStr.isEmpty()) {
             //走轮询
             NumberPool nub=getnumberpoolbygroupid(numbergroupid);
+            jedis.close();
             return nub.getNumber();
         }else{
             //线路组下可用线路id
@@ -264,11 +270,13 @@ public class GetOutNumberApi {
                 for(int i=0;i<numpoollist.size();i++){//遍历可用线路组
                     NumberPool numberpool =json.parseObject(numpoollist.get(i), NumberPool.class);
                     if(str.equals(numberpool.getNumber())){
+                        jedis.close();
                         return str;
                     }
                 }
             }
         }
+        jedis.close();
         return null;
     }
 
