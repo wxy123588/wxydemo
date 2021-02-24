@@ -6,7 +6,6 @@ import com.example.demo.mobile.MobileAddress;
 import com.example.demo.mobile.MobileNumberUtils;
 import com.example.demo.redis.RedisUtil;
 import com.example.demo.repository.*;
-import com.example.demo.util.RedisContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,10 +37,31 @@ public class GetOutNumberApi {
     private Map<String, String> numpoolgroupmap = new HashMap<String, String>();
     private Map<String, String> usermap = new HashMap<String, String>();
     private Map<String, String> statuteventmap = new HashMap<String, String>();
-    private Jedis jedis=RedisUtil.getJedis();
-    private Jedis jedis1=RedisContext.getjedis();
     private int numcount=1;
 
+
+    @RequestMapping(value = "/getoutnumber1")
+    public  NumberPool getoutnumber1(String groupid){
+        groupid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
+        logger.info("1第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
+        return null;
+    }
+    @RequestMapping(value = "/getoutnumber2")
+    public  NumberPool getoutnumber2(String groupid){
+        groupid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
+        logger.info("2第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
+        RedisUtil.hget(RedisUtil.statusevent_redis,groupid);
+        return null;
+    }
+    @RequestMapping(value = "/getoutnumber3")
+    public  NumberPool getoutnumber3(String groupid){
+        groupid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
+        logger.info("3第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
+        for(int i=0;i<10;i++){
+            RedisUtil.hget(RedisUtil.statusevent_redis,groupid);
+        }
+        return null;
+    }
     //传递话单id
     @RequestMapping(value = "/getoutnumber")
     public  String getoutnumber(String eventid){
@@ -84,9 +104,9 @@ public class GetOutNumberApi {
     public  StatusEvent getstatudevent(String id){
         logger.info("StatusEvent1:"+ System.currentTimeMillis());
         StatusEvent statusEvent =null;
-        if(jedis.hexists(RedisContext.statusevent_redis,id)){
+        if(RedisUtil.hexists(RedisUtil.statusevent_redis,id)){
             logger.info("StatusEvent2:"+ System.currentTimeMillis());
-            String event =jedis.hget(RedisContext.statusevent_redis,id);
+            String event =RedisUtil.hget(RedisUtil.statusevent_redis,id);
             logger.info("StatusEvent3:"+ System.currentTimeMillis());
             statusEvent= json.parseObject(event, StatusEvent.class);
             logger.info("StatusEvent4:"+ System.currentTimeMillis());
@@ -95,20 +115,19 @@ public class GetOutNumberApi {
             logger.info("StatusEvent5:"+ System.currentTimeMillis());
             statuteventmap.put(id,json.toJSONString(statusEvent));//数据库查询放入缓存
             logger.info("StatusEvent6:"+ System.currentTimeMillis());
-            jedis.hmset(RedisContext.statusevent_redis,statuteventmap);
+            RedisUtil.hmset(RedisUtil.statusevent_redis,statuteventmap);
             logger.info("StatusEvent7:"+ System.currentTimeMillis());
         }
         logger.info("StatusEvent8:"+ System.currentTimeMillis());
-        jedis.close();
         return statusEvent;
     }
     //获取用户
     public  User getUserbyid(String id){
         User user =null;
         logger.info("user1:"+ System.currentTimeMillis());
-        if(jedis.hexists(RedisContext.user_redis,id)){
+        if(RedisUtil.hexists(RedisUtil.user_redis,id)){
             logger.info("user2:"+ System.currentTimeMillis());
-            String temp =jedis.hget(RedisContext.user_redis,id);
+            String temp =RedisUtil.hget(RedisUtil.user_redis,id);
             logger.info("user3:"+ System.currentTimeMillis());
             user= json.parseObject(temp, User.class);
             logger.info("user4:"+ System.currentTimeMillis());
@@ -116,40 +135,40 @@ public class GetOutNumberApi {
             logger.info("user5:"+ System.currentTimeMillis());
             user=userRepository.findById(id);//查询当前坐席
             usermap.put(id,json.toJSONString(user));//数据库查询放入缓存
-            jedis.hmset(RedisContext.user_redis,usermap);
+            RedisUtil.hmset(RedisUtil.user_redis,usermap);
         }
         logger.info("user6:"+ System.currentTimeMillis());
-        jedis.close();
+        //jedis.close();
         logger.info("user7:"+ System.currentTimeMillis());
         return user;
     }
     //获取线路号码
     public  NumberPool getnumberpoolbyid(String id){
         NumberPool numberpool =null;
-        if(jedis.hexists(RedisContext.numberpool_redis,id)){
-            String temp =jedis.hget(RedisContext.numberpool_redis,id);
+        if(RedisUtil.hexists(RedisUtil.numberpool_redis,id)){
+            String temp =RedisUtil.hget(RedisUtil.numberpool_redis,id);
             numberpool= json.parseObject(temp, NumberPool.class);
         }else{
             numberpool= numberPoolRepository.findById(id);//单线路直接查询线路号码
             numpoolmap.put(id,json.toJSONString(numberpool));//数据库查询放入缓存
-            jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
+            RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
         }
-        jedis.close();
+       // jedis.close();
         return numberpool;
     }
 
     //获取线路组
     public  NumberPoolGroup getnumberpoolgroupbyid(String id){
         NumberPoolGroup numberpoolgroup =null;
-        if(jedis.hexists(RedisContext.numberpoolgroup_redis,id)){
-            String temp =jedis.hget(RedisContext.numberpoolgroup_redis,id);
+        if(RedisUtil.hexists(RedisUtil.numberpoolgroup_redis,id)){
+            String temp =RedisUtil.hget(RedisUtil.numberpoolgroup_redis,id);
             numberpoolgroup= json.parseObject(temp, NumberPoolGroup.class);
         }else{
             numberpoolgroup= numberPoolGroupRepository.findById(id);
             numpoolgroupmap.put(id,json.toJSONString(numberpoolgroup));//数据库查询放入缓存
-            jedis.hmset(RedisContext.numberpoolgroup_redis,numpoolgroupmap);
+            RedisUtil.hmset(RedisUtil.numberpoolgroup_redis,numpoolgroupmap);
         }
-        jedis.close();
+        //jedis.close();
         return numberpoolgroup;
     }
 
@@ -157,23 +176,22 @@ public class GetOutNumberApi {
     public  NumberPool getnumberpoolbygroupid(String groupid){
         logger.info("f1starttime:"+ System.currentTimeMillis());
         NumberPool numberpool =null;
-        Set<String> poolStr = jedis.smembers("ccpaas"+groupid);//获取所有线路id字符串
+        Set<String> poolStr = RedisUtil.smembers("ccpaas"+groupid);//获取所有线路id字符串
         logger.info("f2starttime:"+ System.currentTimeMillis());
 
         //缓存没有则数据库查询，并放入缓存
         if(poolStr.isEmpty()){
             List<NumberPoolGroupRela> list=numberPoolGroupRelaRepository.findByNumbergroupid(groupid);
             if(list.size()==0){
-                jedis.close();
                 return null;
             }
             for(NumberPoolGroupRela rela:list){
-                jedis.sadd("ccpaas"+groupid, rela.getNumberpoolid());//放入缓存
+                RedisUtil.sadd("ccpaas"+groupid, rela.getNumberpoolid());//放入缓存
                 poolStr.add(rela.getNumberpoolid());//拼接所有线路id字符串
             }
         }
         //通过线路id字符串获取线路，没有则数据库查询，并放入缓存
-        List<String>  templist = jedis.hmget(RedisContext.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
+        List<String>  templist = RedisUtil.hmget(RedisUtil.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
         logger.info("f3starttime:"+ System.currentTimeMillis());
 
         if(templist.size()>0){
@@ -192,22 +210,20 @@ public class GetOutNumberApi {
 
             numberpool.setCount(++temp);
             numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
-            jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
+            RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
             logger.info("f6starttime:"+ System.currentTimeMillis());
 
         }else{
             List<NumberPool> list=numberPoolRepository.findBygroupid(groupid);
             if(list.size()==0){
-                jedis.close();
                 return null;
             }
             for(NumberPool numberPool:list){
                 numpoolmap.put(numberPool.getId(),json.toJSONString(numberpool));//数据库查询放入缓存
             }
-            jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
+            RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
             numberpool=getnumPoolbycount(list);
         }
-        jedis.close();
         logger.info("fstarttime:"+ System.currentTimeMillis());
         return numberpool;
     }
@@ -225,8 +241,7 @@ public class GetOutNumberApi {
         }
         numberpool.setCount(temp++);
         numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
-        jedis.hmset(RedisContext.numberpool_redis,numpoolmap);
-        jedis.close();
+        RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
         return numberpool;
     }
 
@@ -234,8 +249,8 @@ public class GetOutNumberApi {
     public  NumberPool getnumberpoolbygroupidandAtt(String groupid,String called){
         NumberPool numPool=null;
         MobileAddress mobileAddress= MobileNumberUtils.getAddress(called);
-        String temp =jedis.hget(RedisContext.numberpool_redis,groupid);
-        Set<String> poolStr = jedis.smembers("ccpaas"+called);
+        String temp =RedisUtil.hget(RedisUtil.numberpool_redis,groupid);
+        Set<String> poolStr = RedisUtil.smembers("ccpaas"+called);
         List<NumberPool> numberpooplist=json.parseArray(temp,NumberPool.class);
         List<NumberPool> prolist=  numberpooplist.stream().filter(numberpoop -> numberpoop.getProvince().equals(mobileAddress.getProvince())).collect(Collectors.toList());
         if(prolist.size()>0){
@@ -248,35 +263,31 @@ public class GetOutNumberApi {
         }else{
             numPool=getnumPoolbycount(numberpooplist);
         }
-        jedis.close();
         return numPool;
     }
 
     //接通后固定外显
     public  String getnumberpoolbyhistory(String called,String numbergroupid) {
         //通过被叫查询所有有过记录的主叫号码
-        Set<String> discallStr = jedis.smembers("ccpaas"+called);
+        Set<String> discallStr = RedisUtil.smembers("ccpaas"+called);
         if (discallStr.isEmpty()) {
             //走轮询
             NumberPool nub=getnumberpoolbygroupid(numbergroupid);
-            jedis.close();
             return nub.getNumber();
         }else{
             //线路组下可用线路id
-            Set<String> poolStr = jedis.smembers("ccpaas"+numbergroupid);
+            Set<String> poolStr = RedisUtil.smembers("ccpaas"+numbergroupid);
             //线路组下可用线路list
-            List<String>  numpoollist = jedis.hmget(RedisContext.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
+            List<String>  numpoollist = RedisUtil.hmget(RedisUtil.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
             for(String str:discallStr){//历史线路组 主叫
                 for(int i=0;i<numpoollist.size();i++){//遍历可用线路组
                     NumberPool numberpool =json.parseObject(numpoollist.get(i), NumberPool.class);
                     if(str.equals(numberpool.getNumber())){
-                        jedis.close();
                         return str;
                     }
                 }
             }
         }
-        jedis.close();
         return null;
     }
 
