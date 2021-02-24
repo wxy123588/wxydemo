@@ -69,18 +69,14 @@ public class GetOutNumberApi {
         eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
         logger.info("第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
         StatusEvent statusEvent=getstatudevent(eventid);//对应话单
-        logger.info("bstarttime:"+ System.currentTimeMillis());
         if(statusEvent!=null&&statusEvent.getUserid()!=null){
             User user=getUserbyid(statusEvent.getUserid());//查询当前坐席
-            logger.info("cstarttime:"+ System.currentTimeMillis());
             if(user!=null){
                 if(user.getNumgroupenable()==false){ //固定线路
                     NumberPool num= getnumberpoolbyid(user.getNumberpoolid());//单线路直接查询线路号码
-                    logger.info("dstarttime:"+ System.currentTimeMillis());
                     return num.getNumber();
                 }else{
                     NumberPoolGroup numberPoolGroup=getnumberpoolgroupbyid(user.getNumbergroupid());//查询当前坐席所在的线路组
-                    logger.info("estarttime:"+ System.currentTimeMillis());
                     List<NumberPool>  numlist=null;
                     if(numberPoolGroup!=null&&numberPoolGroup.getStrategy()!=null){
                         String strategy=numberPoolGroup.getStrategy();//策略
@@ -103,42 +99,30 @@ public class GetOutNumberApi {
 
     //获取话单
     public  StatusEvent getstatudevent(String id){
-        logger.info("StatusEvent1:"+ System.currentTimeMillis());
         StatusEvent statusEvent =null;
         String event =RedisUtil.hget(RedisUtil.statusevent_redis,id);
-        logger.info("StatusEvent3:"+ System.currentTimeMillis());
         if(!StringUtils.isEmpty(event)){
             statusEvent= json.parseObject(event, StatusEvent.class);
-            logger.info("StatusEvent4:"+ System.currentTimeMillis());
         }else{
             statusEvent=statusEventRepository.findById(id);
-            logger.info("StatusEvent5:"+ System.currentTimeMillis());
             statuteventmap.put(id,json.toJSONString(statusEvent));//数据库查询放入缓存
-            logger.info("StatusEvent6:"+ System.currentTimeMillis());
             RedisUtil.hmset(RedisUtil.statusevent_redis,statuteventmap);
-            logger.info("StatusEvent7:"+ System.currentTimeMillis());
         }
-        logger.info("StatusEvent8:"+ System.currentTimeMillis());
         return statusEvent;
     }
     //获取用户
     public  User getUserbyid(String id){
         User user =null;
-        logger.info("user1:"+ System.currentTimeMillis());
+        logger.info("****请求一次开始时间**********"+System.currentTimeMillis());
         String temp =RedisUtil.hget(RedisUtil.user_redis,id);
+        logger.info("****请求一次结束时间**********"+System.currentTimeMillis());
         if(!StringUtils.isEmpty(temp)){
-            logger.info("user3:"+ System.currentTimeMillis());
             user= json.parseObject(temp, User.class);
-            logger.info("user4:"+ System.currentTimeMillis());
         }else{
-            logger.info("user5:"+ System.currentTimeMillis());
             user=userRepository.findById(id);//查询当前坐席
             usermap.put(id,json.toJSONString(user));//数据库查询放入缓存
             RedisUtil.hmset(RedisUtil.user_redis,usermap);
         }
-        logger.info("user6:"+ System.currentTimeMillis());
-        //jedis.close();
-        logger.info("user7:"+ System.currentTimeMillis());
         return user;
     }
     //获取线路号码
@@ -152,7 +136,6 @@ public class GetOutNumberApi {
             numpoolmap.put(id,json.toJSONString(numberpool));//数据库查询放入缓存
             RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
         }
-        // jedis.close();
         return numberpool;
     }
 
@@ -167,7 +150,6 @@ public class GetOutNumberApi {
             numpoolgroupmap.put(id,json.toJSONString(numberpoolgroup));//数据库查询放入缓存
             RedisUtil.hmset(RedisUtil.numberpoolgroup_redis,numpoolgroupmap);
         }
-        //jedis.close();
         return numberpoolgroup;
     }
 
