@@ -42,24 +42,24 @@ public class GetOutNumberApi {
 
 
     @RequestMapping(value = "/getoutnumber1")
-    public  NumberPool getoutnumber1(String groupid){
-        groupid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
+    public  NumberPool getoutnumber1(String eventid){
+        eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
         logger.info("1第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
         return null;
     }
     @RequestMapping(value = "/getoutnumber2")
-    public  NumberPool getoutnumber2(String groupid){
-        groupid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
+    public  NumberPool getoutnumber2(String eventid){
+        eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
         logger.info("2第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
-        RedisUtil.hget(RedisUtil.statusevent_redis,groupid);
+        RedisUtil.hget(RedisUtil.statusevent_redis,eventid);
         return null;
     }
     @RequestMapping(value = "/getoutnumber3")
-    public  NumberPool getoutnumber3(String groupid){
-        groupid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
+    public  NumberPool getoutnumber3(String eventid){
+        eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
         logger.info("3第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
         for(int i=0;i<10;i++){
-            RedisUtil.hget(RedisUtil.statusevent_redis,groupid);
+            RedisUtil.hget(RedisUtil.statusevent_redis,eventid);
         }
         return null;
     }
@@ -105,8 +105,8 @@ public class GetOutNumberApi {
             statusEvent= json.parseObject(event, StatusEvent.class);
         }else{
             statusEvent=statusEventRepository.findById(id);
-            statuteventmap.put(id,json.toJSONString(statusEvent));//数据库查询放入缓存
-            RedisUtil.hmset(RedisUtil.statusevent_redis,statuteventmap);
+            //statuteventmap.put(id,json.toJSONString(statusEvent));//数据库查询放入缓存
+            //RedisUtil.hmset(RedisUtil.statusevent_redis,statuteventmap);
         }
         return statusEvent;
     }
