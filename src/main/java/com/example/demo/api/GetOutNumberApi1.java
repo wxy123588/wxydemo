@@ -18,8 +18,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/getOutNumberApi")
-public class GetOutNumberApi {
+@RequestMapping("/getOutNumberApi1")
+public class GetOutNumberApi1 {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
@@ -81,7 +81,6 @@ public class GetOutNumberApi {
                 }else{
                     NumberPoolGroup numberPoolGroup=getnumberpoolgroupbyid(user.getNumbergroupid());//查询当前坐席所在的线路组
                     logger.info("estarttime:"+ System.currentTimeMillis());
-                    List<NumberPool>  numlist=null;
                     if(numberPoolGroup!=null&&numberPoolGroup.getStrategy()!=null){
                         String strategy=numberPoolGroup.getStrategy();//策略
                         if(strategy.equals("poll")){//轮询
@@ -173,8 +172,10 @@ public class GetOutNumberApi {
 
     //获取最终线路号码
     public  NumberPool getnumberpoolbygroupid(String groupid){
+        logger.info("f1starttime:"+ System.currentTimeMillis());
         NumberPool numberpool =null;
         Set<String> poolStr = RedisUtil.smembers("ccpaas"+groupid);//获取所有线路id字符串
+        logger.info("f2starttime:"+ System.currentTimeMillis());
 
         //缓存没有则数据库查询，并放入缓存
         if(poolStr.isEmpty()){
@@ -189,9 +190,11 @@ public class GetOutNumberApi {
         }
         //通过线路id字符串获取线路，没有则数据库查询，并放入缓存
         List<String>  templist = RedisUtil.hmget(RedisUtil.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
+        logger.info("f3starttime:"+ System.currentTimeMillis());
 
         if(templist.size()>0){
             numberpool =json.parseObject(templist.get(0), NumberPool.class);
+            logger.info("f4starttime:"+ System.currentTimeMillis());
 
             int temp=numberpool.getCount();//获取线路count最小的线路
             for (int j=1;j<templist.size();j++) {
@@ -201,9 +204,13 @@ public class GetOutNumberApi {
                     numberpool=numpool;
                 }
             }
+            logger.info("f5starttime:"+ System.currentTimeMillis());
+
             numberpool.setCount(++temp);
             numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
             RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
+            logger.info("f6starttime:"+ System.currentTimeMillis());
+
         }else{
             List<NumberPool> list=numberPoolRepository.findBygroupid(groupid);
             if(list.size()==0){
@@ -215,6 +222,7 @@ public class GetOutNumberApi {
             RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
             numberpool=getnumPoolbycount(list);
         }
+        logger.info("fstarttime:"+ System.currentTimeMillis());
         return numberpool;
     }
 
@@ -239,14 +247,11 @@ public class GetOutNumberApi {
     public  NumberPool getnumberpoolbygroupidandAtt(String groupid,String called){
         NumberPool numPool=null;
         MobileAddress mobileAddress= MobileNumberUtils.getAddress(called);
-        Set<String> poolStr = RedisUtil.smembers("ccpaas"+groupid);//获取所有线路id字符串
-        //获取所有线路
-        List<String>  templist = RedisUtil.hmget(RedisUtil.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
-        List<NumberPool> numberpooplist=json.parseArray(templist.toString(),NumberPool.class);
-        //获取所有线路中匹配省的
+        String temp =RedisUtil.hget(RedisUtil.numberpool_redis,groupid);
+        Set<String> poolStr = RedisUtil.smembers("ccpaas"+called);
+        List<NumberPool> numberpooplist=json.parseArray(temp,NumberPool.class);
         List<NumberPool> prolist=  numberpooplist.stream().filter(numberpoop -> numberpoop.getProvince().equals(mobileAddress.getProvince())).collect(Collectors.toList());
         if(prolist.size()>0){
-            //获取所有线路中匹配市的
             List<NumberPool> citylist=  prolist.stream().filter(numberpoop -> numberpoop.getCity().equals(mobileAddress.getCity())).collect(Collectors.toList());
             if(citylist.size()>0){
                 numPool=getnumPoolbycount(citylist);

@@ -74,8 +74,8 @@ public class DemoInit {
         List<StatusEvent> statusEventlist = statusEventRepository.findbycreatetime();
         if (statusEventlist.size() > 0) {
             for (StatusEvent statusEvent : statusEventlist) {
-                statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
-             //   jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());//已接通固定外显（被叫、外显）
+               // statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
+                jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());//已接通固定外显（被叫、外显）
             }
             jedis.hmset(RedisContext.statusevent_redis, statuteventmap);
         }
