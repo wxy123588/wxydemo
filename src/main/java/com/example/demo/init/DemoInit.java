@@ -5,15 +5,17 @@ import com.example.demo.entity.*;
 import com.example.demo.redis.RedisUtil;
 import com.example.demo.repository.*;
 import com.example.demo.util.RedisContext;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
+import org.springframework.test.context.junit4.SpringRunner;
 import redis.clients.jedis.Jedis;
 
 import java.util.*;
 
-@RestController
+@Component
 public class DemoInit {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -71,10 +73,12 @@ public class DemoInit {
         List<StatusEvent> statusEventlist = statusEventRepository.findbycreatetime();
         if (statusEventlist.size() > 0) {
             for (StatusEvent statusEvent : statusEventlist) {
-               // statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
                 jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());//已接通固定外显（被叫、外显）
+                if("01c51ba0-01c7-49e1-8cbf-95280b629c03".equals(statusEvent.getId())){
+                    statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
+                    jedis.hmset(RedisContext.statusevent_redis, statuteventmap);
+                }
             }
-            //jedis.hmset(RedisContext.statusevent_redis, statuteventmap);
         }
         jedis.close();
     }

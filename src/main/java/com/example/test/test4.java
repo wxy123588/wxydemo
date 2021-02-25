@@ -46,12 +46,11 @@ public class test4 {
     @Test
     public void testJedis(){
         // 链接redis
-        Jedis jedis = new Jedis("39.107.43.71", 6379);
-        jedis.auth("xyzt2019");
-        jedis.del(RedisContext.user_redis);
-        jedis.del(RedisContext.statusevent_redis);
-        jedis.del(RedisContext.numberpool_redis);
-        jedis.del(RedisContext.numberpoolgroup_redis);
+        Jedis jedis = RedisUtil.getJedis();
+//        jedis.del(RedisContext.user_redis);
+//        jedis.del(RedisContext.statusevent_redis);
+//        jedis.del(RedisContext.numberpool_redis);
+//        jedis.del(RedisContext.numberpoolgroup_redis);
 //        List<NumberPoolGroupRela> list=numberPoolGroupRelaRepository.findAll();
 //        for(NumberPoolGroupRela numberPoolGroupRela:list){
 //            jedis.del("ccpaas"+numberPoolGroupRela.getNumbergroupid());
@@ -61,11 +60,20 @@ public class test4 {
 //            jedis.del("ccpaas"+st.getCalled());
 //        }
         init();
+//        List<String> k=jedis.hmget(RedisUtil.statusevent_redis);
+//        Map<String, String> map1=jedis.hgetAll(RedisUtil.numberpool_redis);
+//        for (Map.Entry<String, String> entry : map1.entrySet()) {
+//           System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());
+//      }
+        Map<String, String> map1=jedis.hgetAll(RedisUtil.statusevent_redis);
+        for (Map.Entry<String, String> entry : map1.entrySet()) {
+           System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());
+      }
     }
 
     public void init () {
         //存user
-        List<com.example.demo.entity.User> userlist = userRepository.findAll();
+        List<User> userlist = userRepository.findAll();
         if (userlist.size() > 0) {
             for (User user : userlist) {
                 usermap.put(user.getId(), json.toJSONString(user));
@@ -99,11 +107,14 @@ public class test4 {
         List<StatusEvent> statusEventlist = statusEventRepository.findbycreatetime();
         if (statusEventlist.size() > 0) {
             for (StatusEvent statusEvent : statusEventlist) {
-                statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
                 jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());//已接通固定外显（被叫、外显）
-                jedis.expire("ccpaas" + statusEvent.getCalled(),600);
+                if("01c51ba0-01c7-49e1-8cbf-95280b629c03".equals(statusEvent.getId())){
+                    statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
+                    jedis.hmset(RedisContext.statusevent_redis, statuteventmap);
+                    String event =RedisUtil.hget(RedisUtil.statusevent_redis,statusEvent.getId());
+System.out.println(event);
+                }
             }
-            jedis.hmset(RedisContext.statusevent_redis, statuteventmap);
         }
         jedis.close();
     }

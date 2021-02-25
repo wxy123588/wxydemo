@@ -3,9 +3,11 @@ package com.example.demo.repository;
 import com.example.demo.entity.NumberPool;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public interface NumberPoolRepository extends JpaRepository<NumberPool, String> {
 
     public NumberPool findById(String id) ;

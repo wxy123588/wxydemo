@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import redis.clients.jedis.Jedis;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,37 +39,11 @@ public class GetOutNumberApi {
     private Map<String, String> statuteventmap = new HashMap<String, String>();
     private int numcount=1;
 
-
-    @RequestMapping(value = "/getoutnumber1")
-    public  NumberPool getoutnumber1(String eventid){
-        eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
-        logger.info("1第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
-        return null;
-    }
-    @RequestMapping(value = "/getoutnumber2")
-    public  NumberPool getoutnumber2(String eventid){
-        eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
-        logger.info("2第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
-        RedisUtil.hget(RedisUtil.statusevent_redis,eventid);
-        return null;
-    }
-    @RequestMapping(value = "/getoutnumber3")
-    public  NumberPool getoutnumber3(String eventid){
-        eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
-        logger.info("3第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
-        for(int i=0;i<10;i++){
-            RedisUtil.hget(RedisUtil.statusevent_redis,eventid);
-        }
-        return null;
-    }
     //传递话单id
     @RequestMapping(value = "/getoutnumber")
-    public  String getoutnumber(String eventid){
-        eventid="01c51ba0-01c7-49e1-8cbf-95280b629c03";
-        logger.info("第"+(numcount++)+"次starttime:"+ System.currentTimeMillis());
-        StatusEvent statusEvent=getstatudevent(eventid);//对应话单
-        if(statusEvent!=null&&statusEvent.getUserid()!=null){
-            User user=getUserbyid(statusEvent.getUserid());//查询当前坐席
+    public  String getoutnumber(String called,String userid){
+        //StatusEvent statusEvent=getstatudevent(eventid);//对应话单
+            User user=getUserbyid(userid);//查询当前坐席
             if(user!=null){
                 if(user.getNumgroupenable()==false){ //固定线路
                     NumberPool num= getnumberpoolbyid(user.getNumberpoolid());//单线路直接查询线路号码
@@ -84,16 +57,16 @@ public class GetOutNumberApi {
                             NumberPool nub=getnumberpoolbygroupid(user.getNumbergroupid());
                             return nub.getNumber();//查询线路组里面的线路
                         }else if(strategy.equals("attribution")){//归属地
-                            NumberPool nub= getnumberpoolbygroupidandAtt(user.getNumbergroupid(),statusEvent.getCalled());
+                            NumberPool nub= getnumberpoolbygroupidandAtt(user.getNumbergroupid(),called);
                             return nub.getNumber();
                         }else{//接通后固定外显
-                            getnumberpoolbyhistory(statusEvent.getCalled(),numberPoolGroup.getId());
+                            NumberPool nub=getnumberpoolbyhistory(called,numberPoolGroup.getId());
+                            return nub.getNumber();
 
                         }
                     }
                 }
             }
-        }
         return null;
     }
 
@@ -113,9 +86,7 @@ public class GetOutNumberApi {
     //获取用户
     public  User getUserbyid(String id){
         User user =null;
-        logger.info("****请求一次开始时间**********"+System.currentTimeMillis());
         String temp =RedisUtil.hget(RedisUtil.user_redis,id);
-        logger.info("****请求一次结束时间**********"+System.currentTimeMillis());
         if(!StringUtils.isEmpty(temp)){
             user= json.parseObject(temp, User.class);
         }else{
@@ -136,6 +107,9 @@ public class GetOutNumberApi {
             numpoolmap.put(id,json.toJSONString(numberpool));//数据库查询放入缓存
             RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
         }
+        numberpool.setCount(numberpool.getCount()+1);
+        numpoolmap.put(numberpool.getId(),json.toJSONString(numberpool));//放入缓存
+        RedisUtil.hmset(RedisUtil.numberpool_redis,numpoolmap);
         return numberpool;
     }
 
@@ -171,10 +145,8 @@ public class GetOutNumberApi {
         }
         //通过线路id字符串获取线路，没有则数据库查询，并放入缓存
         List<String>  templist = RedisUtil.hmget(RedisUtil.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
-
         if(templist.size()>0){
             numberpool =json.parseObject(templist.get(0), NumberPool.class);
-
             int temp=numberpool.getCount();//获取线路count最小的线路
             for (int j=1;j<templist.size();j++) {
                 NumberPool numpool =  json.parseObject(templist.get(j), NumberPool.class);
@@ -242,24 +214,31 @@ public class GetOutNumberApi {
     }
 
     //接通后固定外显
-    public  String getnumberpoolbyhistory(String called,String numbergroupid) {
+    public  NumberPool getnumberpoolbyhistory(String called,String numbergroupid) {
         //通过被叫查询所有有过记录的主叫号码
         Set<String> discallStr = RedisUtil.smembers("ccpaas"+called);
         if (discallStr.isEmpty()) {
             //走轮询
-            NumberPool nub=getnumberpoolbygroupid(numbergroupid);
-            return nub.getNumber();
+            NumberPool numberpool=getnumberpoolbygroupid(numbergroupid);
+            return numberpool;
         }else{
             //线路组下可用线路id
             Set<String> poolStr = RedisUtil.smembers("ccpaas"+numbergroupid);
-            //线路组下可用线路list
-            List<String>  numpoollist = RedisUtil.hmget(RedisUtil.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
-            for(String str:discallStr){//历史线路组 主叫
-                for(int i=0;i<numpoollist.size();i++){//遍历可用线路组
-                    NumberPool numberpool =json.parseObject(numpoollist.get(i), NumberPool.class);
-                    if(str.equals(numberpool.getNumber())){
-                        return str;
+            if(!poolStr.isEmpty()){
+                //线路组下可用线路list
+                List<String>  numpoollist = RedisUtil.hmget(RedisUtil.numberpool_redis,  (String[])poolStr.toArray(new String[poolStr.size()]));
+                if(!numpoollist.isEmpty()){
+                    NumberPool nub =null;
+                    for(String str:discallStr){//历史线路组 主叫
+                        for(int i=0;i<numpoollist.size();i++){//遍历可用线路组
+                            nub =json.parseObject(numpoollist.get(i), NumberPool.class);
+                            if(str.equals(nub.getNumber())){
+                                return nub;
+                            }
+                        }
                     }
+                    List<NumberPool> numberpooplist=json.parseArray(numpoollist.toString(),NumberPool.class);
+                    return getnumPoolbycount(numberpooplist);
                 }
             }
         }

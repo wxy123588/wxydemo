@@ -24,11 +24,13 @@ public final class RedisUtil {
     // jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());
 
     //Redis服务器IP
-    private static String ADDR = "39.107.43.71";
+//    private static String ADDR = "39.107.43.71";
+    private static String ADDR = "172.16.1.219";
     //Redis的端口号
     private static int PORT = 6379;
     //访问密码
-    private static String AUTH = "xyzt2019";
+//    private static String AUTH = "xyzt2019";
+    private static String AUTH = "xyzt123";
     //等待可用连接的最大时间，单位毫秒，默认值为-1，表示永不超时。如果超过等待时间，则直接抛出JedisConnectionException；
     private static int TIMEOUT = 30000;
     private static JedisPool jedisPool = null;
