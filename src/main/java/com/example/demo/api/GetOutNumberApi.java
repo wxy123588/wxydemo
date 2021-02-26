@@ -36,7 +36,7 @@ public class GetOutNumberApi {
     private Map<String, String> numpoolmap = new HashMap<String, String>();
     private Map<String, String> numpoolgroupmap = new HashMap<String, String>();
     private Map<String, String> usermap = new HashMap<String, String>();
-    private Map<String, String> statuteventmap = new HashMap<String, String>();
+   // private Map<String, String> statuteventmap = new HashMap<String, String>();
     private int numcount=1;
 
     @RequestMapping(value = "/getoutnumber1")
@@ -100,18 +100,18 @@ public class GetOutNumberApi {
     }
 
     //获取话单
-    public  StatusEvent getstatudevent(String id){
-        StatusEvent statusEvent =null;
-        String event =RedisUtil.hget(RedisUtil.statusevent_redis,id);
-        if(!StringUtils.isEmpty(event)){
-            statusEvent= json.parseObject(event, StatusEvent.class);
-        }else{
-            statusEvent=statusEventRepository.findById(id);
-            //statuteventmap.put(id,json.toJSONString(statusEvent));//数据库查询放入缓存
-            //RedisUtil.hmset(RedisUtil.statusevent_redis,statuteventmap);
-        }
-        return statusEvent;
-    }
+//    public  StatusEvent getstatudevent(String id){
+//        StatusEvent statusEvent =null;
+//        String event =RedisUtil.hget(RedisUtil.statusevent_redis,id);
+//        if(!StringUtils.isEmpty(event)){
+//            statusEvent= json.parseObject(event, StatusEvent.class);
+//        }else{
+//            statusEvent=statusEventRepository.findById(id);
+//            //statuteventmap.put(id,json.toJSONString(statusEvent));//数据库查询放入缓存
+//            //RedisUtil.hmset(RedisUtil.statusevent_redis,statuteventmap);
+//        }
+//        return statusEvent;
+//    }
     //获取用户
     public  User getUserbyid(String id){
         User user =null;

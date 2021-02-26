@@ -71,10 +71,10 @@ public class DemoInit {
         if (statusEventlist.size() > 0) {
             for (StatusEvent statusEvent : statusEventlist) {
                 jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());//已接通固定外显（被叫、外显）
-                if("01c51ba0-01c7-49e1-8cbf-95280b629c03".equals(statusEvent.getId())){
-                    statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
-                    jedis.hmset(RedisUtil.statusevent_redis, statuteventmap);
-                }
+//                if("01c51ba0-01c7-49e1-8cbf-95280b629c03".equals(statusEvent.getId())){
+//                    statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
+//                    jedis.hmset(RedisUtil.statusevent_redis, statuteventmap);
+//                }
             }
         }
         jedis.close();

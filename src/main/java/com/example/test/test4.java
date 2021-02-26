@@ -64,10 +64,10 @@ public class test4 {
 //        for (Map.Entry<String, String> entry : map1.entrySet()) {
 //           System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());
 //      }
-        Map<String, String> map1=jedis.hgetAll(RedisUtil.statusevent_redis);
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
-           System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());
-      }
+//        Map<String, String> map1=jedis.hgetAll(RedisUtil.statusevent_redis);
+//        for (Map.Entry<String, String> entry : map1.entrySet()) {
+//           System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());
+//      }
     }
 
     public void init () {
@@ -107,12 +107,11 @@ public class test4 {
         if (statusEventlist.size() > 0) {
             for (StatusEvent statusEvent : statusEventlist) {
                 jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());//已接通固定外显（被叫、外显）
-                if("01c51ba0-01c7-49e1-8cbf-95280b629c03".equals(statusEvent.getId())){
-                    statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
-                    jedis.hmset(RedisUtil.statusevent_redis, statuteventmap);
-                    String event =RedisUtil.hget(RedisUtil.statusevent_redis,statusEvent.getId());
-System.out.println(event);
-                }
+//                if("01c51ba0-01c7-49e1-8cbf-95280b629c03".equals(statusEvent.getId())){
+//                    statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
+//                    jedis.hmset(RedisUtil.statusevent_redis, statuteventmap);
+//                    String event =RedisUtil.hget(RedisUtil.statusevent_redis,statusEvent.getId());
+//                }
             }
         }
         jedis.close();
