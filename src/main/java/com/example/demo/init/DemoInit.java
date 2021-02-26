@@ -4,13 +4,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.example.demo.entity.*;
 import com.example.demo.redis.RedisUtil;
 import com.example.demo.repository.*;
-import com.example.demo.util.RedisContext;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.test.context.junit4.SpringRunner;
 import redis.clients.jedis.Jedis;
 
 import java.util.*;
@@ -44,7 +41,7 @@ public class DemoInit {
             for (User user : userlist) {
                 usermap.put(user.getId(), json.toJSONString(user));
             }
-            jedis.hmset(RedisContext.user_redis, usermap);
+            jedis.hmset(RedisUtil.user_redis, usermap);
         }
         //存线路
         List<NumberPool> numberpoollist = numberPoolRepository.findAll();
@@ -52,7 +49,7 @@ public class DemoInit {
             for (NumberPool numberPool : numberpoollist) {
                 numpoolmap.put(numberPool.getId(), json.toJSONString(numberPool));
             }
-            jedis.hmset(RedisContext.numberpool_redis, numpoolmap);
+            jedis.hmset(RedisUtil.numberpool_redis, numpoolmap);
         }
         //存线路组
         List<NumberPoolGroup> numberpoolgrouplist = numberPoolGroupRepository.findAll();
@@ -60,7 +57,7 @@ public class DemoInit {
             for (NumberPoolGroup numberPoolGroup : numberpoolgrouplist) {
                 numpoolgroupmap.put(numberPoolGroup.getId(), json.toJSONString(numberPoolGroup));
             }
-            jedis.hmset(RedisContext.numberpoolgroup_redis, numpoolgroupmap);
+            jedis.hmset(RedisUtil.numberpoolgroup_redis, numpoolgroupmap);
         }
         //存线路组和线路对照
         List<NumberPoolGroupRela> numberpoolgrouprelalist = numberPoolGroupRelaRepository.findAll();
@@ -76,7 +73,7 @@ public class DemoInit {
                 jedis.sadd("ccpaas" + statusEvent.getCalled(), statusEvent.getDiscalled());//已接通固定外显（被叫、外显）
                 if("01c51ba0-01c7-49e1-8cbf-95280b629c03".equals(statusEvent.getId())){
                     statuteventmap.put(statusEvent.getId(), json.toJSONString(statusEvent));
-                    jedis.hmset(RedisContext.statusevent_redis, statuteventmap);
+                    jedis.hmset(RedisUtil.statusevent_redis, statuteventmap);
                 }
             }
         }
