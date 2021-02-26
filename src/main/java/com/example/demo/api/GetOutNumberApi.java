@@ -39,9 +39,38 @@ public class GetOutNumberApi {
     private Map<String, String> statuteventmap = new HashMap<String, String>();
     private int numcount=1;
 
+    @RequestMapping(value = "/getoutnumber1")
+    public  String getoutnumber1(String called,String userid){
+        userid="3aa98c20d8ff4059b985087fbe868eb7";//单线路
+        String val= getoutnumber("13477808291",userid);
+        logger.info(++numcount+"*************"+val);
+        return val;
+    }
+    @RequestMapping(value = "/getoutnumber2")
+    public  String getoutnumber2(String called,String userid){
+        userid="69dd9ba7e9f843d0b0ec11fa4bb4848c";//获取外显号码线路组fixedaftercall
+        String val= getoutnumber("13477808291",userid);
+        logger.info(++numcount+"*************"+val);
+        return val;
+    }
+    @RequestMapping(value = "/getoutnumber3")
+    public  String getoutnumber3(String called,String userid){
+        userid="edfcf835fb1a488bbd46431cd0d83f60";//获取外显号码线路组pull
+        String val= getoutnumber("13477808291",userid);
+        logger.info(++numcount+"*************"+val);
+        return val;
+    }
+    @RequestMapping(value = "/getoutnumber4")
+    public  String getoutnumber4(String called,String userid){
+        userid="2c90810d77704983017770becd21015d";//获取外显号码线路组attribution
+        String val= getoutnumber("13477808291",userid);
+        logger.info(++numcount+"*************"+val);
+        return val;
+    }
     //传递话单id
     @RequestMapping(value = "/getoutnumber")
     public  String getoutnumber(String called,String userid){
+        called="13477808291";
         //StatusEvent statusEvent=getstatudevent(eventid);//对应话单
             User user=getUserbyid(userid);//查询当前坐席
             if(user!=null){
